@@ -2,19 +2,23 @@ pipeline {
     agent any
 
     environment {
-        // Your specific Docker Hub repository
         DOCKER_IMAGE = 'munazahmed431/cyber-def25-detector'
-        TAG = "${currentBuild.number}"
+        TAG = "${env.BUILD_NUMBER}"
     }
 
     stages {
+
+        stage('Checkout') {
+            steps {
+                checkout scm
+            }
+        }
+
         stage('Build Image') {
             steps {
                 script {
-                    echo 'Building Docker Image...'
-                    // Build the image using the Dockerfile in current directory
+                    echo '🔨 Building Docker Image...'
                     sh "docker build -t ${DOCKER_IMAGE}:${TAG} ."
-                    // Tag it as 'latest' as well
                     sh "docker tag ${DOCKER_IMAGE}:${TAG} ${DOCKER_IMAGE}:latest"
                 }
             }
@@ -23,12 +27,9 @@ pipeline {
         stage('Push to Docker Hub') {
             steps {
                 script {
-                    echo 'Logging into Docker Hub...'
-                    // Uses the 'dockerhub-creds' ID you set up in Jenkins Dashboard
+                    echo '📤 Pushing Docker Image to Docker Hub...'
                     withCredentials([usernamePassword(credentialsId: 'dockerhub-creds', passwordVariable: 'DOCKER_PASS', usernameVariable: 'DOCKER_USER')]) {
                         sh "echo $DOCKER_PASS | docker login -u $DOCKER_USER --password-stdin"
-                        
-                        echo 'Pushing images...'
                         sh "docker push ${DOCKER_IMAGE}:${TAG}"
                         sh "docker push ${DOCKER_IMAGE}:latest"
                     }
@@ -39,9 +40,8 @@ pipeline {
         stage('Run Inference (Deploy)') {
             steps {
                 script {
-                    echo 'Running Container via Docker Compose...'
-                    // Passes your specific image to the docker-compose.yml file
-                    sh "IMAGE_NAME=${DOCKER_IMAGE}:${TAG} docker compose up"
+                    echo '🚀 Deploying Container via Docker Compose...'
+                    sh "IMAGE_NAME=${DOCKER_IMAGE}:${TAG} docker compose up -d"
                 }
             }
         }
@@ -49,12 +49,17 @@ pipeline {
 
     post {
         always {
-            echo 'Cleaning up containers...'
-            // Shuts down container to save resources
-            sh "docker compose down"
+            node {
+                echo '🧹 Cleaning up...'
+                sh "docker compose down || true"
+                sh "docker system prune -f || true"
+            }
         }
         success {
-            echo 'CYBER-DEF25 Assignment Completed Successfully!'
+            echo '🎯 Malware analysis completed successfully!'
+        }
+        failure {
+            echo '❌ Pipeline failed!'
         }
     }
 }
