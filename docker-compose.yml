@@ -1,0 +1,12 @@
+version: '3.8'
+
+services:
+  malware-detector:
+    # Use an environment variable for the image name so Jenkins can update it
+    image: ${IMAGE_NAME} 
+    container_name: cyber_def_container
+    volumes:
+      # Mount host logs to container input
+      - ./network_logs:/input/logs
+      # Mount host output folder to capture results
+      - ./output:/output
