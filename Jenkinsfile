@@ -2,7 +2,7 @@ pipeline {
     agent any
 
     environment {
-        DOCKER_IMAGE = 'munazahmed431/cyber-def25-detector'
+        DOCKER_IMAGE = 'munazza-a11/cyber-def25-detector'
         TAG = "${env.BUILD_NUMBER}"
     }
 
@@ -49,11 +49,9 @@ pipeline {
 
     post {
         always {
-            node {
-                echo '🧹 Cleaning up...'
-                sh "docker compose down || true"
-                sh "docker system prune -f || true"
-            }
+            echo '🧹 Cleaning up...'
+            sh "docker compose down || true"
+            sh "docker system prune -f || true"
         }
         success {
             echo '🎯 Malware analysis completed successfully!'
