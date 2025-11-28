@@ -2,7 +2,8 @@ pipeline {
     agent any
 
     environment {
-        DOCKER_IMAGE = 'munazza-a11/cyber-def25-detector'
+        // Updated Docker image with correct Docker Hub username
+        DOCKER_IMAGE = 'munazahmed431/cyber-def25-detector'
         TAG = "${env.BUILD_NUMBER}"
     }
 
@@ -28,10 +29,13 @@ pipeline {
             steps {
                 script {
                     echo '📤 Pushing Docker Image to Docker Hub...'
-                    withCredentials([usernamePassword(credentialsId: 'dockerhub-creds', passwordVariable: 'DOCKER_PASS', usernameVariable: 'DOCKER_USER')]) {
-                        sh "echo $DOCKER_PASS | docker login -u $DOCKER_USER --password-stdin"
-                        sh "docker push ${DOCKER_IMAGE}:${TAG}"
-                        sh "docker push ${DOCKER_IMAGE}:latest"
+                    // Use the correct credentials ID and Docker username
+                    withCredentials([string(credentialsId: 'docker-hub-pass', variable: 'DOCKER_PASS')]) {
+                        sh """
+                            echo $DOCKER_PASS | docker login -u munazahmed431 --password-stdin
+                            docker push ${DOCKER_IMAGE}:${TAG}
+                            docker push ${DOCKER_IMAGE}:latest
+                        """
                     }
                 }
             }
@@ -41,6 +45,7 @@ pipeline {
             steps {
                 script {
                     echo '🚀 Deploying Container via Docker Compose...'
+                    // Pass IMAGE_NAME environment variable to docker compose
                     sh "IMAGE_NAME=${DOCKER_IMAGE}:${TAG} docker compose up -d"
                 }
             }
@@ -61,3 +66,4 @@ pipeline {
         }
     }
 }
+
